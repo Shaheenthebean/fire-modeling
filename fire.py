@@ -9,16 +9,17 @@ grid_size = 1 * ureg.km #units?
 
 time_step = 1 * ureg.mins
 
-def fire_speed(point):
+def fire_speed(point, SSA_count):
     F=4
     V = 8.5
     A = 1
     S = 0
     FSR = ((0.0002*F**2 - 0.008*F+0.1225)*V**2 + (-0.0008*F**2+0.0005*F+0.1823)*V + (0.0019*F**2-0.0924*F+1.2675))*(A)*(S+1) * ureg.miles/ureg.hours
+    FSR = FSR * (0.99**(SSA_count/4)) # 4 drones provide 1% reduction in spread
     return (FSR, FSR, FSR, FSR) # N S W E
 
-def drone_decrease(point, drones):
-    return .3 + (1-(.94)**drones) # starts at 30%, first drone increases by 6%, then diminishing returns
+def drone_decrease(point, Rep_count):
+    return .3 # as long as we have repeater drones, firefighters have 30% chance to put out fires
 
 class Point:
 
@@ -35,7 +36,7 @@ def do_timestep(grid, drones, fire_spread_function, grid_size, time_step):
     for row, row_of_points in enumerate(grid):
         for column, point in enumerate(row_of_points):
             if point == 2:
-                temp_spread = fire_spread_function(point)
+                temp_spread = fire_spread_function(point, drones)
                 # chance to spread in any cardinal direction
                 if (row != 0 and grid[row-1, column] == 0):
                     spread_chance_north = (temp_spread[0]*time_step/grid_size).to_base_units()
@@ -75,29 +76,3 @@ def mult_trials(matrix_size, x_start, y_start, drones, num_steps, num_trials):
         ratio_sum += burn_ratio
     return ratio_sum/num_trials
 
-# matrix = np.zeros((500,500))
-# drones = 3
-# matrix = np.zeros((10,10))
-# matrix[1,2] = 2
-# grid = np.vectorize(Point)(matrix)
-# print(grid)
-# for i in range(10):
-    # do_timestep(grid, drones, fire_speed, grid_size, time_step)
-    # print(np.count_nonzero(grid==2)/500**2)
-    # print(grid)
-    # print("\n\n\n")
-# print(grid)
-# print(np.count_nonzero(grid==2)/10**2)
-
-# drones = 0
-# matrix = np.zeros((10,10))
-# matrix[1,2] = 2
-# grid = np.vectorize(Point)(matrix)
-# print(grid)
-# for i in range(10):
-#     do_timestep(grid, drones, fire_speed, grid_size, time_step)
-#     # print(np.count_nonzero(grid==2)/500**2)
-#     # print(grid)
-#     # print("\n\n\n")
-# print(grid)
-# print(np.count_nonzero(grid==2)/10**2)
