@@ -28,7 +28,7 @@ def minimize_color_dist(color1, list_of_colors):
     return colordict[min_color]
 
 elevation_array = np.vectorize(minimize_color_dist, excluded=["list_of_colors"])(vicarray, list_of_colors=unique)
-
+# print(elevation_array.shape)
 # rev_colordict = {item:list(key) for key, item in colordict.items()}
 # new_img_array = np.array([[rev_colordict[j] for j in i] for i in elevation_array])
 # j = Image.fromarray(np.uint8(new_img_array), "RGB")

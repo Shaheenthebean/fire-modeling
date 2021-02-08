@@ -1,9 +1,11 @@
 import numpy as np
 import sys
+from imagehandling import elevation_array
 np.set_printoptions(threshold=sys.maxsize)
 import random
 from pint import UnitRegistry
 ureg = UnitRegistry()
+from PIL import Image
 
 grid_size = 1 * ureg.km #units?
 
@@ -13,18 +15,30 @@ def fire_speed(point, SSA_count):
     F=4
     V = 8.5
     A = 1
-    S = 0
+    S = 1.13*point.height/2034
     FSR = ((0.0002*F**2 - 0.008*F+0.1225)*V**2 + (-0.0008*F**2+0.0005*F+0.1823)*V + (0.0019*F**2-0.0924*F+1.2675))*(A)*(S+1) * ureg.miles/ureg.hours
     FSR = FSR * (0.99**(SSA_count/4)) # 4 drones provide 1% reduction in spread
     return (FSR, FSR, FSR, FSR) # N S W E
 
 def drone_decrease(point, Rep_count):
-    return .3 # as long as we have repeater drones, firefighters have 30% chance to put out fires
+    if Rep_count > 0:
+        return .03 # as long as we have repeater drones, firefighters have 30% chance to put out fires
+    else:
+        return 0
 
 class Point:
 
-    def __init__(self, fire):
-        self.fire = fire
+    def __init__(self, height):
+        self.height = height
+        if (self.height <= 6):
+            self.fire = 3
+        else:
+            self.fire = 0
+            # 0 = no fire
+            # 1 = temp fire
+            # 2 = fire
+            # 3 = water
+            # 4 = ex-fire
 
     def __repr__(self):
         return str(int(self.fire)) #BAD: REMOVE INT
@@ -40,33 +54,40 @@ def do_timestep(grid, drones, fire_spread_function, grid_size, time_step):
                 # chance to spread in any cardinal direction
                 if (row != 0 and grid[row-1, column] == 0):
                     spread_chance_north = (temp_spread[0]*time_step/grid_size).to_base_units()
-                    grid[row-1, column] = Point(2*(random.random()<=spread_chance_north))
+                    # print(spread_chance_north)
+                    grid[row-1, column].fire = 2*(random.random()<=spread_chance_north)
                 if (row != (len(grid)-1) and grid[row+1, column] == 0 ):
                     spread_chance_south = (temp_spread[1]*time_step/grid_size).to_base_units()
-                    grid[row+1, column] = Point(1*(random.random()<=spread_chance_south))
+                    grid[row+1, column].fire = 1*(random.random()<=spread_chance_south)
                 if (column != 0 and grid[row, column-1] == 0):
                     spread_chance_west = (temp_spread[2]*time_step/grid_size).to_base_units()
-                    grid[row, column-1] = Point(2*(random.random()<=spread_chance_west))
+                    grid[row, column-1].fire = 2*(random.random()<=spread_chance_west)
                 if (column != (len(grid[0]) - 1)) and grid[row, column+1] == 0:
                     spread_chance_east = (temp_spread[3]*time_step/grid_size).to_base_units()
-                    grid[row, column+1] = Point(1*(random.random()<=spread_chance_east))
+                    grid[row, column+1].fire = 1*(random.random()<=spread_chance_east)
                 # chance of drones to help put out fire
                 if random.random()<=drone_decrease(point, drones):
-                    point.fire = 0
+                    point.fire = 4
             if point.fire == 1:
                 point.fire = 2
 
-def sim_fire_spread(matrix_size, x_start, y_start, drones, num_steps):
-    matrix = np.zeros((matrix_size, matrix_size))
-    area = matrix_size**2
-    matrix[y_start, x_start] = 2
-    grid = np.vectorize(Point)(matrix)
-    # print(grid)
+def sim_fire_spread(elevation_matrix, x_start, y_start, size_start, drones, num_steps):
+    area = elevation_matrix.size
+    grid = np.vectorize(Point)(elevation_matrix)
+    for y in range(5):
+        for x in range(5):
+            grid[y_start+y, x_start+x].fire = 2
     for i in range(num_steps):
         do_timestep(grid, drones, fire_speed, grid_size, time_step)
         # print("Timestep " + str(i) + ":" + str(np.count_nonzero(grid==2)/area))
         # print(grid)
-    return np.count_nonzero(grid==2)/area
+        # print(np.count_nonzero(grid==2))
+        if (i%10) ==0:
+            colors = {3:[0,0,255], 0:[0,255,0], 2:[255,170,0], 4:[128,128,128]}
+            temp_img = [[colors[j.fire] for j in i] for i in grid]
+            j = Image.fromarray(np.uint8(temp_img), "RGB")
+            j.show()
+    return (np.count_nonzero(grid==2) + np.count_nonzero(grid == 4))/area
 
 def mult_trials(matrix_size, x_start, y_start, drones, num_steps, num_trials):
     ratio_sum = 0
@@ -76,3 +97,8 @@ def mult_trials(matrix_size, x_start, y_start, drones, num_steps, num_trials):
         ratio_sum += burn_ratio
     return ratio_sum/num_trials
 
+
+km_size=600
+grid_size = km_size/elevation_array.shape[0] * ureg.km
+
+print(sim_fire_spread(elevation_array, 100, 100, 5, 1, 100))
