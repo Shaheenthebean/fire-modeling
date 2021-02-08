@@ -7,9 +7,7 @@ from pint import UnitRegistry
 ureg = UnitRegistry()
 from PIL import Image
 
-grid_size = 1 * ureg.km #units?
-
-time_step = 1 * ureg.mins
+time_step = 1 * ureg.mins #units
 
 def fire_speed(point, SSA_count):
     F=4
@@ -35,10 +33,10 @@ class Point:
         else:
             self.fire = 0
             # 0 = no fire
-            # 1 = temp fire
+            # 1 = placeholder value
             # 2 = fire
             # 3 = water
-            # 4 = ex-fire
+            # 4 = put out fire
 
     def __repr__(self):
         return str(int(self.fire))
@@ -54,7 +52,6 @@ def do_timestep(grid, drones, fire_spread_function, grid_size, time_step):
                 # chance to spread in any cardinal direction
                 if (row != 0 and grid[row-1, column] == 0):
                     spread_chance_north = (temp_spread[0]*time_step/grid_size).to_base_units()
-                    # print(spread_chance_north)
                     grid[row-1, column].fire = 2*(random.random()<=spread_chance_north)
                 if (row != (len(grid)-1) and grid[row+1, column] == 0 ):
                     spread_chance_south = (temp_spread[1]*time_step/grid_size).to_base_units()
@@ -79,21 +76,12 @@ def sim_fire_spread(elevation_matrix, x_start, y_start, size_start, drones, num_
             grid[y_start+y, x_start+x].fire = 2
     for i in range(num_steps):
         do_timestep(grid, drones, fire_speed, grid_size, time_step)
-        # print("Timestep " + str(i) + ":" + str(np.count_nonzero(grid==2)/area))
-        # print(grid)
-        # print(np.count_nonzero(grid==2))
-        # if (i%10) ==0:
-            # colors = {3:[0,0,255], 0:[0,255,0], 2:[255,170,0], 4:[128,128,128]}
-            # temp_img = [[colors[j.fire] for j in i] for i in grid]
-            # j = Image.fromarray(np.uint8(temp_img), "RGB")
-            # j.show()
     return (np.count_nonzero(grid==2) + np.count_nonzero(grid == 4))/area
 
 def mult_trials(elevation_matrix, x_start, y_start, size_start, drones, num_steps, num_trials):
     ratio_sum = 0
     for i in range(num_trials):
         burn_ratio = sim_fire_spread(elevation_matrix, x_start, y_start, size_start, drones, num_steps)
-        # print("Trial " + str(i) + " burn ratio:" + str(burn_ratio))
         ratio_sum += burn_ratio
     return ratio_sum/num_trials
 
@@ -102,7 +90,12 @@ def drone_test(size_start, max_drones, num_steps, num_trials):
         avg_burned = mult_trials(elevation_array, 100, 100, size_start, i, num_steps, num_trials)
         print("For "+ str(i) + " drones: " + str(avg_burned))
 
-km_size=600
+km_size=600 #height of region we're modeling, in km
 grid_size = km_size/elevation_array.shape[0] * ureg.km
 
-# print(sim_fire_spread(elevation_array, 100, 100, 5, 1, 100))
+print(sim_fire_spread(elevation_array, 100, 100, 5, 1, 100))
+
+            # colors = {3:[0,0,255], 0:[0,255,0], 2:[255,170,0], 4:[128,128,128]}
+            # temp_img = [[colors[j.fire] for j in i] for i in grid]
+            # j = Image.fromarray(np.uint8(temp_img), "RGB")
+            # j.show()

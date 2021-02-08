@@ -1,7 +1,6 @@
 from PIL import Image
 import numpy as np
 import sys
-# np.set_printoptions(threshold=sys.maxsize)
 
 image = Image.open("keycropped.png")
 array = np.asarray(image)
