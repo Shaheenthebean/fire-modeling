@@ -36,6 +36,7 @@ def do_timestep(grid, drones, fire_spread_function, grid_size, time_step):
         for column, point in enumerate(row_of_points):
             if point == 2:
                 temp_spread = fire_spread_function(point)
+                # chance to spread in any cardinal direction
                 if (row != 0 and grid[row-1, column] == 0):
                     spread_chance_north = (temp_spread[0]*time_step/grid_size).to_base_units()
                     grid[row-1, column] = Point(2*(random.random()<=spread_chance_north))
@@ -48,25 +49,37 @@ def do_timestep(grid, drones, fire_spread_function, grid_size, time_step):
                 if (column != (len(grid[0]) - 1)) and grid[row, column+1] == 0:
                     spread_chance_east = (temp_spread[3]*time_step/grid_size).to_base_units()
                     grid[row, column+1] = Point(1*(random.random()<=spread_chance_east))
+                # chance of drones to help put out fire
                 if random.random()<=drone_decrease(point, drones):
                     point.fire = 0
             if point.fire == 1:
                 point.fire = 2
 
+def sim_fire_spread(matrix_size, x_start, y_start, drones, num_steps):
+    matrix = np.zeros((matrix_size, matrix_size))
+    area = matrix_size**2
+    matrix[y_start, x_start] = 2
+    grid = np.vectorize(Point)(matrix)
+    print(grid)
+    for i in range(num_steps):
+        do_timestep(grid, drones, fire_speed, grid_size, time_step)
+        # print(np.count_nonzero(grid==2)/area)
+        print(grid)
+    return np.count_nonzero(grid==2)/area
 
 # matrix = np.zeros((500,500))
-drones = 3
-matrix = np.zeros((10,10))
-matrix[1,2] = 2
-grid = np.vectorize(Point)(matrix)
-print(grid)
-for i in range(10):
-    do_timestep(grid, drones, fire_speed, grid_size, time_step)
+# drones = 3
+# matrix = np.zeros((10,10))
+# matrix[1,2] = 2
+# grid = np.vectorize(Point)(matrix)
+# print(grid)
+# for i in range(10):
+    # do_timestep(grid, drones, fire_speed, grid_size, time_step)
     # print(np.count_nonzero(grid==2)/500**2)
-    print(grid)
+    # print(grid)
     # print("\n\n\n")
 # print(grid)
-print(np.count_nonzero(grid==2)/10**2)
+# print(np.count_nonzero(grid==2)/10**2)
 
 # drones = 0
 # matrix = np.zeros((10,10))
