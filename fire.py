@@ -17,14 +17,14 @@ def fire_speed(point, SSA_count):
     A = 1
     S = 1.13*point.height/2034
     FSR = ((0.0002*F**2 - 0.008*F+0.1225)*V**2 + (-0.0008*F**2+0.0005*F+0.1823)*V + (0.0019*F**2-0.0924*F+1.2675))*(A)*(S+1) * ureg.miles/ureg.hours
-    FSR = FSR * (0.97**(SSA_count/1)) # 8 drones provide 6% reduction in spread
+    FSR = FSR * (0.94**(SSA_count/1)) # 1 drone provides 6% reduction in spread
     return (FSR, FSR, FSR, FSR) # N S W E
 
 def drone_decrease(point, Rep_count):
     if Rep_count > 0:
-        return 0.3 # as long as we have repeater drones, firefighters have 3% chance to put out fires
+        return 0.3 # as long as we have repeater drones, firefighters have 30% chance to put out fires
     else:
-        return 0.3
+        return 0.3 # assume repeater drones are active, allowing firefighters to still do their job
 
 class Point:
 
@@ -41,7 +41,7 @@ class Point:
             # 4 = ex-fire
 
     def __repr__(self):
-        return str(int(self.fire)) #BAD: REMOVE INT
+        return str(int(self.fire))
 
     def __eq__(self, other):
         return self.fire == other
