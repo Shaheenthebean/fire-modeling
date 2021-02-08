@@ -17,14 +17,14 @@ def fire_speed(point, SSA_count):
     A = 1
     S = 1.13*point.height/2034
     FSR = ((0.0002*F**2 - 0.008*F+0.1225)*V**2 + (-0.0008*F**2+0.0005*F+0.1823)*V + (0.0019*F**2-0.0924*F+1.2675))*(A)*(S+1) * ureg.miles/ureg.hours
-    FSR = FSR * (0.99**(SSA_count/4)) # 4 drones provide 1% reduction in spread
+    FSR = FSR * (0.97**(SSA_count/1)) # 8 drones provide 6% reduction in spread
     return (FSR, FSR, FSR, FSR) # N S W E
 
 def drone_decrease(point, Rep_count):
     if Rep_count > 0:
-        return .03 # as long as we have repeater drones, firefighters have 30% chance to put out fires
+        return 0.3 # as long as we have repeater drones, firefighters have 3% chance to put out fires
     else:
-        return 0
+        return 0.3
 
 class Point:
 
@@ -74,31 +74,35 @@ def do_timestep(grid, drones, fire_spread_function, grid_size, time_step):
 def sim_fire_spread(elevation_matrix, x_start, y_start, size_start, drones, num_steps):
     area = elevation_matrix.size
     grid = np.vectorize(Point)(elevation_matrix)
-    for y in range(5):
-        for x in range(5):
+    for y in range(size_start):
+        for x in range(size_start):
             grid[y_start+y, x_start+x].fire = 2
     for i in range(num_steps):
         do_timestep(grid, drones, fire_speed, grid_size, time_step)
         # print("Timestep " + str(i) + ":" + str(np.count_nonzero(grid==2)/area))
         # print(grid)
         # print(np.count_nonzero(grid==2))
-        if (i%10) ==0:
-            colors = {3:[0,0,255], 0:[0,255,0], 2:[255,170,0], 4:[128,128,128]}
-            temp_img = [[colors[j.fire] for j in i] for i in grid]
-            j = Image.fromarray(np.uint8(temp_img), "RGB")
-            j.show()
+        # if (i%10) ==0:
+            # colors = {3:[0,0,255], 0:[0,255,0], 2:[255,170,0], 4:[128,128,128]}
+            # temp_img = [[colors[j.fire] for j in i] for i in grid]
+            # j = Image.fromarray(np.uint8(temp_img), "RGB")
+            # j.show()
     return (np.count_nonzero(grid==2) + np.count_nonzero(grid == 4))/area
 
-def mult_trials(matrix_size, x_start, y_start, drones, num_steps, num_trials):
+def mult_trials(elevation_matrix, x_start, y_start, size_start, drones, num_steps, num_trials):
     ratio_sum = 0
     for i in range(num_trials):
-        burn_ratio = sim_fire_spread(matrix_size, x_start, y_start, drones, num_steps)
-        print("Trial " + str(i) + " burn ratio:" + str(burn_ratio))
+        burn_ratio = sim_fire_spread(elevation_matrix, x_start, y_start, size_start, drones, num_steps)
+        # print("Trial " + str(i) + " burn ratio:" + str(burn_ratio))
         ratio_sum += burn_ratio
     return ratio_sum/num_trials
 
+def drone_test(size_start, max_drones, num_steps, num_trials):
+    for i in range(max_drones + 1):
+        avg_burned = mult_trials(elevation_array, 100, 100, size_start, i, num_steps, num_trials)
+        print("For "+ str(i) + " drones: " + str(avg_burned))
 
 km_size=600
 grid_size = km_size/elevation_array.shape[0] * ureg.km
 
-print(sim_fire_spread(elevation_array, 100, 100, 5, 1, 100))
+# print(sim_fire_spread(elevation_array, 100, 100, 5, 1, 100))
