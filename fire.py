@@ -18,7 +18,7 @@ def fire_speed(point):
     return (FSR, FSR, FSR, FSR) # N S W E
 
 def drone_decrease(point, drones):
-    return (1-(.9)**drones)
+    return .3 + (1-(.94)**drones) # starts at 30%, first drone increases by 6%, then diminishing returns
 
 class Point:
 
@@ -60,12 +60,20 @@ def sim_fire_spread(matrix_size, x_start, y_start, drones, num_steps):
     area = matrix_size**2
     matrix[y_start, x_start] = 2
     grid = np.vectorize(Point)(matrix)
-    print(grid)
+    # print(grid)
     for i in range(num_steps):
         do_timestep(grid, drones, fire_speed, grid_size, time_step)
-        # print(np.count_nonzero(grid==2)/area)
-        print(grid)
+        # print("Timestep " + str(i) + ":" + str(np.count_nonzero(grid==2)/area))
+        # print(grid)
     return np.count_nonzero(grid==2)/area
+
+def mult_trials(matrix_size, x_start, y_start, drones, num_steps, num_trials):
+    ratio_sum = 0
+    for i in range(num_trials):
+        burn_ratio = sim_fire_spread(matrix_size, x_start, y_start, drones, num_steps)
+        print("Trial " + str(i) + " burn ratio:" + str(burn_ratio))
+        ratio_sum += burn_ratio
+    return ratio_sum/num_trials
 
 # matrix = np.zeros((500,500))
 # drones = 3
